@@ -72,6 +72,7 @@
 
   <h1>My Artwork Portfolio</h1>
 
+  <!-- Container where images will be dynamically added -->
   <div class="gallery" id="galleryContainer"></div>
 
   <script>
@@ -83,6 +84,7 @@
     // Build the API URL that fetches contents of the "images" folder
     const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images?ref=${BRANCH_NAME}`;
 
+    // Function to fetch and display images
     fetch(API_URL)
       .then(response => {
         if (!response.ok) {
@@ -92,42 +94,40 @@
       })
       .then(files => {
         const galleryContainer = document.getElementById('galleryContainer');
-
-        // Use an array to store info about each valid image
         const imagesArray = [];
 
+        // Gather valid image files, extracting a numeric prefix for sorting
         files.forEach(file => {
           if (file.type === "file") {
             const extension = file.name.split(".").pop().toLowerCase();
             if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
-              // Base name, removing the extension
+              // Remove the extension to get the base name
               const baseName = file.name.substring(0, file.name.lastIndexOf("."));
 
-              // Attempt to extract a leading number for ordering
-              const match = baseName.match(/^(\d+)(.*)/);
-              let order = 9999; // default if there's no leading number
+              // This regex looks for leading digits (e.g. "150") 
+              // followed by anything else (captured in group 2).
+              const match = baseName.match(/^(\d+)(.*)$/);
+              let order = 9999; // default order if no leading digits
               let displayName = baseName;
 
               if (match) {
-                // match[1] = the leading digits (e.g. "2")
-                // match[2] = the rest of the string (e.g. "TestArt")
-                order = parseInt(match[1], 10);
-                displayName = match[2].trim(); 
+                order = parseInt(match[1], 10);      // The leading digits
+                displayName = match[2].trim();       // Remove those digits from the name
               }
 
               imagesArray.push({
                 order,
-                name: displayName, 
+                name: displayName,
                 url: file.download_url
               });
             }
           }
         });
 
-        // Sort images by the extracted numeric order
+        // Sort by the numeric prefix (order)
         imagesArray.sort((a, b) => a.order - b.order);
 
-        // Now create gallery items in sorted order
+        // Create gallery items in sorted order
         imagesArray.forEach(imageObj => {
           const galleryItem = document.createElement('div');
           galleryItem.className = 'gallery-item';
@@ -138,8 +138,8 @@
 
           const caption = document.createElement('div');
           caption.className = 'caption';
-          // e.g. "2: TestArt"
-          caption.textContent = `${imageObj.order}: ${imageObj.name}`;
+          // Only show the "clean" display name (without the leading number)
+          caption.textContent = imageObj.name;
 
           galleryItem.appendChild(img);
           galleryItem.appendChild(caption);
