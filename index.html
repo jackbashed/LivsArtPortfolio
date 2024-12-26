@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Artwork Portfolio</title>
   <style>
     /* Basic CSS reset */
@@ -77,8 +77,8 @@
 
   <script>
     // Replace with your own GitHub account & repo details:
-    const GITHUB_USERNAME = "jackbashed";
-    const REPO_NAME       = "LivsArtPortfolio";
+    const GITHUB_USERNAME = "YOUR_GITHUB_USERNAME";
+    const REPO_NAME       = "YOUR_REPO_NAME";
     const BRANCH_NAME     = "main"; // or "master", or whichever branch you use
 
     // Build the API URL that fetches contents of the "images" folder
@@ -94,39 +94,59 @@
       })
       .then(files => {
         const galleryContainer = document.getElementById('galleryContainer');
-        let counter = 1;
+        const imagesArray = [];
 
-        // 'files' will be an array of objects with properties like 'name', 'path', 'download_url'
+        // Gather all valid image files, extracting ordering & display name
         files.forEach(file => {
-          // Only process if it's a file (not a subdirectory) and ends with a supported image extension
           if (file.type === "file") {
             const extension = file.name.split(".").pop().toLowerCase();
-            if (["jpg","jpeg","png","gif"].includes(extension)) {
-              // Remove the extension for the caption
+            if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
+              // Remove the extension to get the base name
               const baseName = file.name.substring(0, file.name.lastIndexOf("."));
 
-              // Create the gallery item
-              const galleryItem = document.createElement('div');
-              galleryItem.className = 'gallery-item';
+              // Try to match a leading number (e.g., "1Artwork" -> [ "1Artwork", "1", "Artwork" ])
+              const match = baseName.match(/^(\d+)(.*)/);
+              let order = 9999;     // default if no leading number
+              let displayName = baseName;
 
-              // Create the image element
-              const img = document.createElement('img');
-              img.src = file.download_url; // direct link to the file
-              img.alt = baseName;
+              if (match) {
+                order = parseInt(match[1], 10);  // "1" -> 1
+                displayName = match[2];         // "Artwork"
+              }
 
-              // Create the caption
-              const caption = document.createElement('div');
-              caption.className = 'caption';
-              caption.textContent = `${counter}: ${baseName}`;
-
-              // Combine everything
-              galleryItem.appendChild(img);
-              galleryItem.appendChild(caption);
-              galleryContainer.appendChild(galleryItem);
-
-              counter++;
+              // Push object with sorting order, the display name, and the URL
+              imagesArray.push({
+                order,
+                name: displayName.trim(), // Trim whitespace in case the filename has a space
+                url: file.download_url
+              });
             }
           }
+        });
+
+        // Sort by the numerical order extracted from the filename
+        imagesArray.sort((a, b) => a.order - b.order);
+
+        // Now create gallery items in sorted order
+        imagesArray.forEach(imageObj => {
+          // Create the gallery item container
+          const galleryItem = document.createElement('div');
+          galleryItem.className = 'gallery-item';
+
+          // Create the image element
+          const img = document.createElement('img');
+          img.src = imageObj.url;
+          img.alt = imageObj.name;
+
+          // Create the caption (only the artwork name, no number)
+          const caption = document.createElement('div');
+          caption.className = 'caption';
+          caption.textContent = imageObj.name;
+
+          // Assemble
+          galleryItem.appendChild(img);
+          galleryItem.appendChild(caption);
+          galleryContainer.appendChild(galleryItem);
         });
       })
       .catch(error => {
