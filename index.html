@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Artwork Portfolio</title>
+  <style>
+    /* Basic CSS reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .gallery-item {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+      max-width: 300px;
+      flex: 1 1 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .caption {
+      padding: 10px;
+      font-size: 0.9rem;
+      text-align: center;
+      word-wrap: break-word;
+    }
+
+    @media (max-width: 768px) {
+      .gallery-item {
+        max-width: 45%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .gallery-item {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>My Artwork Portfolio</h1>
+
+  <!-- Container where images will be dynamically added -->
+  <div class="gallery" id="galleryContainer"></div>
+
+  <script>
+    // Replace with your own GitHub account & repo details:
+    const GITHUB_USERNAME = "jackbashed";
+    const REPO_NAME       = "LivsArtPortfolio";
+    const BRANCH_NAME     = "main"; // or "master", or whichever branch you use
+
+    // Build the API URL that fetches contents of the "images" folder
+    const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images?ref=${BRANCH_NAME}`;
+
+    // Function to fetch and display images
+    fetch(API_URL)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok " + response.statusText);
+        }
+        return response.json();
+      })
+      .then(files => {
+        const galleryContainer = document.getElementById('galleryContainer');
+        let counter = 1;
+
+        // 'files' will be an array of objects with properties like 'name', 'path', 'download_url'
+        files.forEach(file => {
+          // Only process if it's a file (not a subdirectory) and ends with a supported image extension
+          if (file.type === "file") {
+            const extension = file.name.split(".").pop().toLowerCase();
+            if (["jpg","jpeg","png","gif"].includes(extension)) {
+              // Remove the extension for the caption
+              const baseName = file.name.substring(0, file.name.lastIndexOf("."));
+
+              // Create the gallery item
+              const galleryItem = document.createElement('div');
+              galleryItem.className = 'gallery-item';
+
+              // Create the image element
+              const img = document.createElement('img');
+              img.src = file.download_url; // direct link to the file
+              img.alt = baseName;
+
+              // Create the caption
+              const caption = document.createElement('div');
+              caption.className = 'caption';
+              caption.textContent = `${counter}: ${baseName}`;
+
+              // Combine everything
+              galleryItem.appendChild(img);
+              galleryItem.appendChild(caption);
+              galleryContainer.appendChild(galleryItem);
+
+              counter++;
+            }
+          }
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching images:", error);
+      });
+  </script>
+
+</body>
+</html>
