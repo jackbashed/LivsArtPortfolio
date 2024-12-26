@@ -72,7 +72,6 @@
 
   <h1>My Artwork Portfolio</h1>
 
-  <!-- Container where images will be dynamically added -->
   <div class="gallery" id="galleryContainer"></div>
 
   <script>
@@ -84,7 +83,6 @@
     // Build the API URL that fetches contents of the "images" folder
     const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images?ref=${BRANCH_NAME}`;
 
-    // Function to fetch and display images
     fetch(API_URL)
       .then(response => {
         if (!response.ok) {
@@ -94,56 +92,55 @@
       })
       .then(files => {
         const galleryContainer = document.getElementById('galleryContainer');
+
+        // Use an array to store info about each valid image
         const imagesArray = [];
 
-        // Gather all valid image files, extracting ordering & display name
         files.forEach(file => {
           if (file.type === "file") {
             const extension = file.name.split(".").pop().toLowerCase();
             if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
-              // Remove the extension to get the base name
+              // Base name, removing the extension
               const baseName = file.name.substring(0, file.name.lastIndexOf("."));
 
-              // Try to match a leading number (e.g., "1Artwork" -> [ "1Artwork", "1", "Artwork" ])
+              // Attempt to extract a leading number for ordering
               const match = baseName.match(/^(\d+)(.*)/);
-              let order = 9999;     // default if no leading number
+              let order = 9999; // default if there's no leading number
               let displayName = baseName;
 
               if (match) {
-                order = parseInt(match[1], 10);  // "1" -> 1
-                displayName = match[2];         // "Artwork"
+                // match[1] = the leading digits (e.g. "2")
+                // match[2] = the rest of the string (e.g. "TestArt")
+                order = parseInt(match[1], 10);
+                displayName = match[2].trim(); 
               }
 
-              // Push object with sorting order, the display name, and the URL
               imagesArray.push({
                 order,
-                name: displayName.trim(), // Trim whitespace in case the filename has a space
+                name: displayName, 
                 url: file.download_url
               });
             }
           }
         });
 
-        // Sort by the numerical order extracted from the filename
+        // Sort images by the extracted numeric order
         imagesArray.sort((a, b) => a.order - b.order);
 
         // Now create gallery items in sorted order
         imagesArray.forEach(imageObj => {
-          // Create the gallery item container
           const galleryItem = document.createElement('div');
           galleryItem.className = 'gallery-item';
 
-          // Create the image element
           const img = document.createElement('img');
           img.src = imageObj.url;
           img.alt = imageObj.name;
 
-          // Create the caption (only the artwork name, no number)
           const caption = document.createElement('div');
           caption.className = 'caption';
-          caption.textContent = imageObj.name;
+          // e.g. "2: TestArt"
+          caption.textContent = `${imageObj.order}: ${imageObj.name}`;
 
-          // Assemble
           galleryItem.appendChild(img);
           galleryItem.appendChild(caption);
           galleryContainer.appendChild(galleryItem);
@@ -153,6 +150,5 @@
         console.error("Error fetching images:", error);
       });
   </script>
-
 </body>
 </html>
