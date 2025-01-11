@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Artwork Portfolio</title>
   <style>
     /* Basic CSS reset */
@@ -40,6 +41,8 @@
       flex: 1 1 250px;
       display: flex;
       flex-direction: column;
+      cursor: pointer;
+      /* makes it clear it's clickable */
     }
 
     .gallery-item img {
@@ -55,6 +58,7 @@
       word-wrap: break-word;
     }
 
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       .gallery-item {
         max-width: 45%;
@@ -66,96 +70,171 @@
         max-width: 100%;
       }
     }
+
+    /* -------------------
+       Modal / Lightbox CSS
+       ------------------- */
+    .modal {
+      display: none;
+      /* hidden by default */
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      /* enable scroll if needed */
+      background-color: rgba(0, 0, 0, 0.8);
+      /* black overlay */
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      max-width: 90%;
+      /* large, but still with margins */
+      max-height: 90%;
+      margin: auto;
+      display: block;
+      border: 2px solid #fff;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: #fff;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>My Artwork Portfolio</h1>
+  <h1>My Artwork Portfolio</h1>
 
-<!-- Container where images will be dynamically added -->
-<div class="gallery" id="galleryContainer"></div>
+  <!-- Container where images will be dynamically added -->
+  <div class="gallery" id="galleryContainer"></div>
 
-<script>
-  // Replace with your own GitHub account & repo details:
-  const GITHUB_USERNAME = "YOUR_GITHUB_USERNAME";
-  const REPO_NAME       = "YOUR_REPO_NAME";
-  const BRANCH_NAME     = "main"; // or "master", or whichever branch you use
+  <!-- 
+  The modal container, initially hidden.
+  Will become visible when an image is clicked.
+-->
+  <div id="myModal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="modalImg" alt="">
+  </div>
 
-  // Build the API URL that fetches contents of the "images" folder
-  const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images?ref=${BRANCH_NAME}`;
+  <script>
+    // Replace with your own GitHub account & repo details:
+    const GITHUB_USERNAME = "jackbashed";
+    const REPO_NAME = "LivsArtPortfolio";
+    const BRANCH_NAME = "main"; // or "master"
 
-  // Function to fetch and display images
-  fetch(API_URL)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok " + response.statusText);
-      }
-      return response.json();
-    })
-    .then(files => {
-      const galleryContainer = document.getElementById('galleryContainer');
-      const imagesArray = [];
+    // Build the API URL that fetches contents of the "images" folder
+    const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images?ref=${BRANCH_NAME}`;
 
-      files.forEach(file => {
-        // Only process if it's a file with a supported image extension
-        if (file.type === "file") {
-          const extension = file.name.split(".").pop().toLowerCase();
-          if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
-            // Remove the extension to get the base name
-            const baseName = file.name.substring(0, file.name.lastIndexOf("."));
+    // Grab references to modal elements
+    const modal = document.getElementById('myModal');
+    const modalImg = document.getElementById('modalImg');
+    const closeBtn = document.querySelector('.close');
 
-            // This regex will capture any leading digits (group 1) plus optional spaces,
-            // then capture the remainder (group 2).
-            // Example: "150 10 trees" => match[1] = "150", match[2] = "10 trees"
-            // Example: "150guyart"   => match[1] = "150", match[2] = "guyart"
-            // Example: "1artwork"   => match[1] = "1",   match[2] = "artwork"
-            // Example: "artwork"    => no match => no leading digits
-            const match = baseName.match(/^(\d+)\s*(.*)$/);
-
-            let order = 9999; // fallback if no digits
-            let displayName = baseName;
-
-            if (match) {
-              order = parseInt(match[1], 10);     // e.g. 150
-              displayName = match[2].trim();      // e.g. "10 trees", "guyart", or "artwork"
-              console.log("order:", order, "displayName:", displayName);
-            }
-
-            imagesArray.push({
-              order,
-              name: displayName,
-              url: file.download_url
-            });
-          }
-        }
-      });
-
-      // Sort by the numeric prefix (order)
-      imagesArray.sort((a, b) => a.order - b.order);
-
-      // Create gallery items in sorted order
-      imagesArray.forEach(imageObj => {
-        const galleryItem = document.createElement('div');
-        galleryItem.className = 'gallery-item';
-
-        const img = document.createElement('img');
-        img.src = imageObj.url;
-        img.alt = imageObj.name;
-
-        const caption = document.createElement('div');
-        caption.className = 'caption';
-        // Display the name WITHOUT the leading digit(s)
-        caption.textContent = imageObj.name;
-
-        galleryItem.appendChild(img);
-        galleryItem.appendChild(caption);
-        galleryContainer.appendChild(galleryItem);
-      });
-    })
-    .catch(error => {
-      console.error("Error fetching images:", error);
+    // Close the modal when the X is clicked
+    closeBtn.addEventListener('click', function () {
+      modal.style.display = 'none';
     });
-</script>
+
+    // Also close the modal when user clicks anywhere outside the image
+    window.addEventListener('click', function (event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Function to fetch and display images
+    fetch(API_URL)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok " + response.statusText);
+        }
+        return response.json();
+      })
+      .then(files => {
+        const galleryContainer = document.getElementById('galleryContainer');
+        const imagesArray = [];
+
+        files.forEach(file => {
+          // Only process if it's a file with a supported image extension
+          if (file.type === "file") {
+            const extension = file.name.split(".").pop().toLowerCase();
+            if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
+              // Remove the extension to get the base name
+              const baseName = file.name.substring(0, file.name.lastIndexOf("."));
+
+              // This regex captures any leading digits (group 1) plus optional spaces,
+              // then captures the remainder (group 2).
+              // e.g. "150 10 trees" => match[1] = "150", match[2] = "10 trees"
+              const match = baseName.match(/^(\d+)\s*(.*)$/);
+
+              let order = 9999; // fallback if no digits
+              let displayName = baseName;
+
+              if (match) {
+                // Extract the numeric prefix for sorting
+                order = parseInt(match[1], 10);
+                // The remainder of the baseName
+                displayName = match[2].trim();
+              }
+
+              // Remove all numbers from the final display name
+              displayName = displayName.replace(/\d+/g, '').trim();
+
+              imagesArray.push({
+                order,
+                name: displayName,
+                url: file.download_url
+              });
+            }
+          }
+        });
+
+        // Sort by the numeric prefix (order)
+        imagesArray.sort((a, b) => a.order - b.order);
+
+        // Create gallery items in sorted order
+        imagesArray.forEach(imageObj => {
+          const galleryItem = document.createElement('div');
+          galleryItem.className = 'gallery-item';
+
+          const img = document.createElement('img');
+          img.src = imageObj.url;
+          img.alt = imageObj.name;
+
+          // On click, show the modal with the large version
+          img.addEventListener('click', function () {
+            modalImg.src = imageObj.url;
+            modalImg.alt = imageObj.name;
+            modal.style.display = 'flex'; // Use flex to center align
+          });
+
+          const caption = document.createElement('div');
+          caption.className = 'caption';
+          caption.textContent = imageObj.name;
+
+          galleryItem.appendChild(img);
+          galleryItem.appendChild(caption);
+          galleryContainer.appendChild(galleryItem);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching images:", error);
+      });
+  </script>
 
 </body>
+
 </html>
