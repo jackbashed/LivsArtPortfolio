@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Artwork Portfolio</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
     /* Basic CSS reset */
     * {
       margin: 0;
@@ -14,60 +16,81 @@
     }
 
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      padding: 20px;
+      font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #fdf2f8 0%, #f8f9ff 35%, #eef2ff 100%);
+      color: #2d2a44;
+      padding: 40px 20px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
+      font-size: clamp(2rem, 3vw, 3rem);
+      letter-spacing: 1px;
     }
 
     .gallery {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     .gallery-item {
-      background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      overflow: hidden;
-      max-width: 300px;
-      flex: 1 1 250px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 18px;
+      overflow: visible;
       display: flex;
       flex-direction: column;
+      align-items: center;
       cursor: pointer;
-      /* makes it clear it's clickable */
+      box-shadow: 0 10px 30px rgba(57, 68, 128, 0.12);
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+      outline: none;
+      padding: 18px 18px 22px;
+      gap: 18px;
+    }
+
+    .gallery-item:focus-visible {
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.5), 0 12px 35px rgba(57, 68, 128, 0.18);
+      transform: translateY(-6px);
+    }
+
+    .gallery-item:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 18px 40px rgba(57, 68, 128, 0.2);
     }
 
     .gallery-item img {
-      width: 100%;
+      max-width: 100%;
+      width: auto;
       height: auto;
       display: block;
+      margin: 0 auto;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(57, 68, 128, 0.14);
     }
 
     .caption {
-      padding: 10px;
-      font-size: 0.9rem;
+      width: 100%;
+      padding: 0 12px;
+      font-size: 1rem;
       text-align: center;
       word-wrap: break-word;
+      line-height: 1.5;
+      color: #3a365f;
+      letter-spacing: 0.3px;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .gallery-item {
-        max-width: 45%;
+    @media (max-width: 640px) {
+      body {
+        padding: 24px 16px 40px;
       }
-    }
 
-    @media (max-width: 480px) {
       .gallery-item {
-        max-width: 100%;
+        padding: 14px 14px 18px;
+        gap: 14px;
       }
     }
 
@@ -76,39 +99,44 @@
        ------------------- */
     .modal {
       display: none;
-      /* hidden by default */
       position: fixed;
       z-index: 9999;
-      left: 0;
-      top: 0;
+      inset: 0;
       width: 100%;
       height: 100%;
-      overflow: auto;
-      /* enable scroll if needed */
-      background-color: rgba(0, 0, 0, 0.8);
-      /* black overlay */
+      padding: 40px 24px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(79, 70, 229, 0.85));
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(6px);
     }
 
     .modal-content {
-      max-width: 90%;
-      /* large, but still with margins */
-      max-height: 90%;
+      max-width: min(1200px, 95vw);
+      max-height: 95vh;
+      width: auto;
+      height: auto;
       margin: auto;
       display: block;
-      border: 2px solid #fff;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      border-radius: 18px;
+      border: 6px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 25px 70px rgba(15, 23, 42, 0.45);
     }
 
     .close {
       position: absolute;
-      top: 20px;
-      right: 30px;
-      color: #fff;
-      font-size: 40px;
-      font-weight: bold;
+      top: 26px;
+      right: 36px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(2.2rem, 4vw, 3rem);
+      font-weight: 500;
       cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .close:hover {
+      color: #fff;
+      transform: scale(1.1);
     }
   </style>
 </head>
@@ -155,6 +183,13 @@
       }
     });
 
+    // Close on Escape for accessibility
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && modal.style.display === 'flex') {
+        modal.style.display = 'none';
+      }
+    });
+
     // Function to fetch and display images
     fetch(API_URL)
       .then(response => {
@@ -187,11 +222,11 @@
                 // Extract the numeric prefix for sorting
                 order = parseInt(match[1], 10);
                 // The remainder of the baseName
-                displayName = match[2].trim();
+                const remainder = match[2].trim();
+                displayName = remainder || baseName.slice(match[1].length).trim();
               }
 
-              // Remove all numbers from the final display name
-              displayName = displayName.replace(/\d+/g, '').trim();
+              displayName = displayName.trim();
 
               imagesArray.push({
                 order,
@@ -209,21 +244,33 @@
         imagesArray.forEach(imageObj => {
           const galleryItem = document.createElement('div');
           galleryItem.className = 'gallery-item';
+          galleryItem.tabIndex = 0;
+          galleryItem.setAttribute('role', 'button');
+          galleryItem.setAttribute('aria-label', `View ${imageObj.name} larger`);
 
           const img = document.createElement('img');
           img.src = imageObj.url;
           img.alt = imageObj.name;
 
-          // On click, show the modal with the large version
-          img.addEventListener('click', function () {
-            modalImg.src = imageObj.url;
-            modalImg.alt = imageObj.name;
-            modal.style.display = 'flex'; // Use flex to center align
-          });
-
           const caption = document.createElement('div');
           caption.className = 'caption';
           caption.textContent = imageObj.name;
+
+          const openModal = function () {
+            modalImg.src = imageObj.url;
+            modalImg.alt = imageObj.name;
+            modal.style.display = 'flex'; // Use flex to center align
+          };
+
+          // On click, show the modal with the large version
+          galleryItem.addEventListener('click', openModal);
+
+          galleryItem.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openModal();
+            }
+          });
 
           galleryItem.appendChild(img);
           galleryItem.appendChild(caption);
