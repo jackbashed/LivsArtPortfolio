@@ -52,6 +52,14 @@
       gap: 18px;
     }
 
+    .gallery-item--large {
+      grid-column: span 2;
+    }
+
+    .gallery-item--large img {
+      max-width: min(100%, 640px);
+    }
+
     .gallery-item:focus-visible {
       box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.5), 0 12px 35px rgba(57, 68, 128, 0.18);
       transform: translateY(-6px);
@@ -91,6 +99,10 @@
       .gallery-item {
         padding: 14px 14px 18px;
         gap: 14px;
+      }
+
+      .gallery-item--large {
+        grid-column: span 1;
       }
     }
 
@@ -193,6 +205,58 @@
       }
     });
 
+    const SIZE_MARKERS = {
+      big: 'large',
+      hero: 'large',
+      large: 'large',
+      xl: 'large'
+    };
+
+    function parseImageFilename(baseName) {
+      const metadata = {
+        order: 9999,
+        name: baseName.trim(),
+        size: 'normal'
+      };
+
+      const orderMatch = baseName.match(/^(\d+)\s*(.*)$/);
+      let remainder = baseName.trim();
+
+      if (orderMatch) {
+        metadata.order = parseInt(orderMatch[1], 10);
+        remainder = orderMatch[2].trim();
+      }
+
+      if (!remainder) {
+        metadata.name = metadata.name || baseName.trim();
+        return metadata;
+      }
+
+      const words = remainder.split(/\s+/);
+      const filteredWords = [];
+
+      words.forEach(word => {
+        const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (SIZE_MARKERS[normalized]) {
+          metadata.size = SIZE_MARKERS[normalized];
+        } else {
+          filteredWords.push(word);
+        }
+      });
+
+      if (filteredWords.length) {
+        metadata.name = filteredWords.join(' ').trim();
+      } else {
+        metadata.name = remainder;
+      }
+
+      if (!metadata.name) {
+        metadata.name = baseName.trim() || baseName;
+      }
+
+      return metadata;
+    }
+
     // Function to fetch and display images
     fetch(API_URL)
       .then(response => {
@@ -213,27 +277,12 @@
               // Remove the extension to get the base name
               const baseName = file.name.substring(0, file.name.lastIndexOf("."));
 
-              // This regex captures any leading digits (group 1) plus optional spaces,
-              // then captures the remainder (group 2).
-              // e.g. "150 10 trees" => match[1] = "150", match[2] = "10 trees"
-              const match = baseName.match(/^(\d+)\s*(.*)$/);
-
-              let order = 9999; // fallback if no digits
-              let displayName = baseName;
-
-              if (match) {
-                // Extract the numeric prefix for sorting
-                order = parseInt(match[1], 10);
-                // The remainder of the baseName
-                const remainder = match[2].trim();
-                displayName = remainder || baseName.slice(match[1].length).trim();
-              }
-
-              displayName = displayName.trim();
+              const metadata = parseImageFilename(baseName);
 
               imagesArray.push({
-                order,
-                name: displayName,
+                order: metadata.order,
+                name: metadata.name,
+                size: metadata.size,
                 url: file.download_url
               });
             }
@@ -250,6 +299,10 @@
           galleryItem.tabIndex = 0;
           galleryItem.setAttribute('role', 'button');
           galleryItem.setAttribute('aria-label', `View ${imageObj.name} larger`);
+
+          if (imageObj.size === 'large') {
+            galleryItem.classList.add('gallery-item--large');
+          }
 
           const img = document.createElement('img');
           img.src = imageObj.url;
